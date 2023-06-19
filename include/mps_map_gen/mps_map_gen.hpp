@@ -3,7 +3,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/srv/get_map.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "map_msgs/msg/occupancy_grid_update.hpp"
 #include <Eigen/Geometry>
 namespace mps_map_gen {
 class MPS
@@ -21,8 +23,12 @@ public:
         corners[1] = (rot * corners[1]) + center;
         corners[2] = (rot * corners[2]) + center;
         corners[3] = (rot * corners[3]) + center;
+        angle = rot.angle();
+        center_ = center;
     }
     Eigen::Vector2f corners[4];
+    Eigen::Vector2f center_;
+    float angle;
 };
 
 class MpsMapGen : public rclcpp::Node {
@@ -35,6 +41,8 @@ private:
     void add_mps_to_map(MPS mps, int height, int width, double resolution, std::vector<int8_t> &data);
     rclcpp::Subscription<tf2_msgs::msg::TFMessage>::SharedPtr mps_tf;
     rclcpp::Client<nav_msgs::srv::GetMap>::SharedPtr map_client;
+    rclcpp::Publisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_publisher;
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map2_publisher;
 };
 }
 

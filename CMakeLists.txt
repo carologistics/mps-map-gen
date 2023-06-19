@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(map_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -25,7 +26,7 @@ target_include_directories(mps_map_gen PUBLIC
   $<INSTALL_INTERFACE:include>)
 target_compile_features(mps_map_gen PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_link_libraries (mps_map_gen Eigen3::Eigen ${tf2_LIBRARIES})
-ament_target_dependencies(mps_map_gen rclcpp nav_msgs tf2 tf2_msgs tf2_geometry_msgs)
+ament_target_dependencies(mps_map_gen rclcpp nav_msgs tf2 tf2_msgs tf2_geometry_msgs map_msgs)
 
 install(TARGETS mps_map_gen
   DESTINATION lib/${PROJECT_NAME})
