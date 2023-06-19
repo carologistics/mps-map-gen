@@ -7,19 +7,33 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(Eigen3 3.3 REQUIRED)
+
+include_directories(include)
+include_directories(
+  ${tf2_INCLUDE_DIRS}
+)
 
 add_executable(mps_map_gen src/mps_map_gen.cpp)
 target_include_directories(mps_map_gen PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 target_compile_features(mps_map_gen PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_link_libraries (mps_map_gen Eigen3::Eigen ${tf2_LIBRARIES})
+ament_target_dependencies(mps_map_gen rclcpp nav_msgs tf2 tf2_msgs tf2_geometry_msgs)
 
 install(TARGETS mps_map_gen
   DESTINATION lib/${PROJECT_NAME})
 
+# Install include directory
+install(DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -32,4 +46,5 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_include_directories(include)
 ament_package()
