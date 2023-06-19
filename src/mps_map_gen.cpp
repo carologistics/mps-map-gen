@@ -17,6 +17,7 @@ MpsMapGen::~MpsMapGen() {}
 
 
 void MpsMapGen::mps_update(const tf2_msgs::msg::TFMessage::SharedPtr tf_msg) {
+  printf("update\n");
   // Wait for the service to become available
   while (!map_client->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
@@ -40,6 +41,7 @@ void MpsMapGen::mps_update(const tf2_msgs::msg::TFMessage::SharedPtr tf_msg) {
       return;
   }
   auto response = future.get();
+  printf("map\n");
 
   // Process the response data here
   // Example: Print the map resolution
@@ -60,8 +62,9 @@ void MpsMapGen::mps_update(const tf2_msgs::msg::TFMessage::SharedPtr tf_msg) {
     MPS mps(mps_length, mps_width, Eigen::Vector2f(x, y), Eigen::Rotation2Df(rotation));
     add_mps_to_map(mps, map_height, map_width, resolution, response->map.data);
   }
+  printf("Hier\n");
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_publisher;
-  map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>("ros2_map_update", 10);
+  map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>("ros2_map_updates", 10);
 
   // Publish the updated map
   map_publisher->publish(response->map);
