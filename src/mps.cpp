@@ -9,8 +9,6 @@ MPS::MPS(geometry_msgs::msg::TransformStamped tf, std::string name)
                           tf.transform.translation.y),
           Eigen::Rotation2Df(tf2::getYaw(tf.transform.rotation)), name) {}
 MPS::MPS(Eigen::Vector2f center, Eigen::Rotation2Df rot, std::string name) {
-  name_ = name;
-  center = Eigen::Vector2f(center.x() + 9.0f, center.y() + 1.5f);
   double mps_width = MpsMapGen::mps_width;
   double mps_length = MpsMapGen::mps_length;
   corners[0] = Eigen::Vector2f(mps_width / 2, -mps_length / 2);
@@ -22,8 +20,16 @@ MPS::MPS(Eigen::Vector2f center, Eigen::Rotation2Df rot, std::string name) {
   corners[1] = (rot * corners[1]) + center;
   corners[2] = (rot * corners[2]) + center;
   corners[3] = (rot * corners[3]) + center;
+
+  name_ = name;
   angle = rot.angle();
   center_ = center;
+}
+
+MPS MPS::from_origin(Eigen::Vector2f origin) const {
+  return MPS(
+      Eigen::Vector2f(center_.x() - origin.x(), center_.y() - origin.y()),
+      Eigen::Rotation2Df(angle), name_);
 }
 
 Eigen::Vector2i MPS::GetMax(float resolution) {

@@ -14,6 +14,8 @@ public:
   MPS(geometry_msgs::msg::TransformStamped tf, std::string name);
   MPS(Eigen::Vector2f center, Eigen::Rotation2Df rot, std::string name);
 
+  MPS from_origin(Eigen::Vector2f origin) const;
+
   Eigen::Vector2f corners[4];
   Eigen::Vector2f center_;
   float angle;

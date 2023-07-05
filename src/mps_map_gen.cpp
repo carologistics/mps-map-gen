@@ -116,8 +116,11 @@ void MpsMapGen::map_receive(
     int map_height = response->map.info.height;
     int map_width = response->map.info.width;
 
+    Eigen::Vector2f origin(response->map.info.origin.position.x,
+                           response->map.info.origin.position.y);
+
     for (const auto &mps : mps_list) {
-      add_mps_to_map(mps, map_height, map_width, resolution,
+      add_mps_to_map(mps.from_origin(origin), map_height, map_width, resolution,
                      response->map.data);
     }
 
@@ -133,7 +136,6 @@ void MpsMapGen::map_receive(
 
 void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
                                double resolution, std::vector<int8_t> &data) {
-  // Calculate the bounding box of the rotated box
 
   float cosAngle = std::cos(mps.angle);
   float sinAngle = std::sin(mps.angle);
