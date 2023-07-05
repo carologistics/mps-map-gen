@@ -28,9 +28,9 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
 
   map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-          "tim_map_updates", qos_update);
+          "mps_map_updates", qos_update);
   map_pubsliher =
-      this->create_publisher<nav_msgs::msg::OccupancyGrid>("tim_map", qos);
+      this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_map", qos);
 
   update_map();
   timer_ =
