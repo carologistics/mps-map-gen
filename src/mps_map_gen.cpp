@@ -152,9 +152,9 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
       int cy = py - mps_y;
 
       // Check if the pixel is inside the rotated box
-      if (std::abs(cx * cosAngle - cy * sinAngle) <=
+      if (std::abs(cx * cosAngle + cy * sinAngle) <=
               mps_width / resolution / 2 &&
-          std::abs(cx * sinAngle + cy * cosAngle) <=
+          std::abs(-cx * sinAngle + cy * cosAngle) <=
               mps_length / resolution / 2) {
         data[py * width + px] = 100;
       }
