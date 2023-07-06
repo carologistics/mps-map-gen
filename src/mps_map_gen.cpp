@@ -114,6 +114,7 @@ void MpsMapGen::map_receive(
 
     if (response->map.data.size() == 0) {
       needs_refresh = true;
+      return;
     }
 
     double resolution = response->map.info.resolution;
