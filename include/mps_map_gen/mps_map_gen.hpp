@@ -50,6 +50,8 @@ private:
 
   // only here to prevent realocation
   geometry_msgs::msg::TransformStamped mps_transform;
+
+  bool needs_refresh = false;
 };
 
 } // namespace mps_map_gen

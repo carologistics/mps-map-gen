@@ -41,8 +41,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
 
 void MpsMapGen::tfCallback() {
   std::vector<std::string> frames = tf_buffer->getAllFrameNames();
-  ;
-  bool needs_refresh = false;
+
   for (const auto &frame : frames) {
     if (std::find(std::begin(mps_names), std::end(mps_names), frame) ==
         std::end(mps_names)) {
@@ -59,8 +58,10 @@ void MpsMapGen::tfCallback() {
     }
   }
 
-  if (needs_refresh)
+  if (needs_refresh) {
     update_map();
+    needs_refresh = false;
+  }
 }
 
 map_msgs::msg::OccupancyGridUpdate convertOccupancyGridToOccupancyGridUpdate(
@@ -109,7 +110,11 @@ void MpsMapGen::map_receive(
     rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) {
   try {
     auto response = future.get();
-    RCLCPP_INFO(this->get_logger(), "map");
+    RCLCPP_INFO(this->get_logger(), "map size %li", response->map.data.size());
+
+    if (response->map.data.size() == 0) {
+      needs_refresh = true;
+    }
 
     double resolution = response->map.info.resolution;
     int map_height = response->map.info.height;
