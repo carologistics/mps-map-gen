@@ -44,19 +44,18 @@ void MpsMapGen::tfCallback() {
   ;
   bool needs_refresh = false;
   for (const auto &frame : frames) {
-    if (frame == "map" || frame == "mps")
+    if (std::find(std::begin(mps_names), std::end(mps_names), frame) ==
+        std::end(mps_names)) {
       continue;
-    if (tf_buffer->canTransform("mps", frame, tf2::TimePointZero) &&
-        tf_buffer->canTransform("map", frame, tf2::TimePointZero)) {
-      try {
-        mps_transform =
-            tf_buffer->lookupTransform("map", frame, tf2::TimePointZero);
-        bool new_mps = set_mps(MPS(mps_transform, frame));
-        if (new_mps)
-          needs_refresh = true;
-      } catch (const tf2::TransformException &ex) {
-        continue;
-      }
+    }
+    try {
+      mps_transform =
+          tf_buffer->lookupTransform("map", frame, tf2::TimePointZero);
+      bool new_mps = set_mps(MPS(mps_transform, frame));
+      if (new_mps)
+        needs_refresh = true;
+    } catch (const tf2::TransformException &ex) {
+      continue;
     }
   }
 

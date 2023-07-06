@@ -44,6 +44,10 @@ private:
 
   std::vector<MPS> mps_list;
 
+  std::string mps_names[14] = {"M-BS",  "M-SS",  "M-DS",  "M-CS1", "M-CS2",
+                               "M-RS1", "M-RS2", "C-BS",  "C-SS",  "C-DS",
+                               "C-CS1", "C-CS2", "C-RS1", "C-RS2"};
+
   // only here to prevent realocation
   geometry_msgs::msg::TransformStamped mps_transform;
 };
