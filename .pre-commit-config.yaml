@@ -30,4 +30,5 @@ repos:
     hooks:
     - id: cmake-format
     - id: cmake-lint
+      args: [--config=.cmakelint.py]
 

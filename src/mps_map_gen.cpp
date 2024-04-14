@@ -2,16 +2,64 @@
 #include "rclcpp/executors.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <chrono>
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 namespace mps_map_gen {
 MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
-  tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+  declare_parameter<std::string>("namespace", "");
+  declare_parameter<std::string>("map_client", "/map_server/map");
+  declare_parameter<bool>("get_data_from_refbox", true);
+  declare_parameter<bool>("publish_wait_pos", true);
+  declare_parameter<std::string>("peer_address", "127.0.0.1");
+  declare_parameter<unsigned short>("recv_port_private", 4441);
+  declare_parameter<unsigned short>("recv_port_public", 4444);
+  declare_parameter<std::string>("crypto_key", "randomkey");
+  declare_parameter<std::string>(
+      "proto_path",
+      ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
+          "/rcll-protobuf-msgs/");
 
-  map_client = this->create_client<nav_msgs::srv::GetMap>("map_server/map");
+  data_ = std::make_shared<MpsMapGenData>();
+  use_refbox_data_ = this->get_parameter("get_data_from_refbox").as_bool();
+  publish_wait_pos_ = this->get_parameter("publish_wait_pos").as_bool();
+  if (publish_wait_pos_) {
+    RCLCPP_INFO(get_logger(), "ACTSCHUALLY");
+    wait_pos_gen_ = std::make_unique<WaitPosGen>(data_);
+  }
+
+  std::string peer_address = this->get_parameter("peer_address").as_string();
+  unsigned short recv_port_private =
+      this->get_parameter("recv_port_private").as_int();
+  unsigned short recv_port_public =
+      this->get_parameter("recv_port_public").as_int();
+
+  if (use_refbox_data_) {
+    RCLCPP_INFO(
+        this->get_logger(),
+        "Listening to %s on %i (public) and %i (private), using proto Path %s",
+        peer_address.c_str(), recv_port_public, recv_port_private,
+        this->get_parameter("proto_path").as_string().c_str());
+    std::string crypto_key = this->get_parameter("crypto_key").as_string();
+    std::string proto_path = this->get_parameter("proto_path").as_string();
+    refbox_conn_ = std::make_unique<RefboxConnector>(
+        peer_address, recv_port_public, recv_port_private, crypto_key,
+        proto_path, data_);
+  } else {
+    tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+  }
+  timer_ = this->create_wall_timer(
+      500ms, std::bind(&MpsMapGen::update_callback, this));
+
+  tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+
+  std::string ns = this->get_parameter("namespace").as_string();
+  std::string client = this->get_parameter("map_client").as_string();
+  map_client =
+      this->create_client<nav_msgs::srv::GetMap>(ns + "/map_server/map");
 
   // Set QoS to match the expected settings for map visualization in RViz
   rclcpp::QoS qos(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
@@ -33,34 +81,34 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_map", qos);
 
   update_map();
-  timer_ =
-      this->create_wall_timer(500ms, std::bind(&MpsMapGen::tfCallback, this));
 
   RCLCPP_INFO(this->get_logger(), "Start");
 }
 
-void MpsMapGen::tfCallback() {
-  std::vector<std::string> frames = tf_buffer->getAllFrameNames();
+void MpsMapGen::update_callback() {
+  if (!use_refbox_data_) {
+    std::vector<std::string> frames = tf_buffer->getAllFrameNames();
 
-  for (const auto &frame : frames) {
-    if (std::find(std::begin(mps_names), std::end(mps_names), frame) ==
-        std::end(mps_names)) {
-      continue;
-    }
-    try {
-      mps_transform =
-          tf_buffer->lookupTransform("map", frame, tf2::TimePointZero);
-      bool new_mps = set_mps(MPS(mps_transform, frame));
-      if (new_mps)
-        needs_refresh = true;
-    } catch (const tf2::TransformException &ex) {
-      continue;
+    for (const auto &frame : frames) {
+      if (std::find(std::begin(mps_names), std::end(mps_names), frame) ==
+          std::end(mps_names)) {
+        continue;
+      }
+      try {
+        mps_transform =
+            tf_buffer->lookupTransform("map", frame, tf2::TimePointZero);
+        data_->set_mps(MPS(mps_transform, frame));
+      } catch (const tf2::TransformException &ex) {
+        continue;
+      }
     }
   }
 
-  if (needs_refresh) {
+  if (data_->needs_refresh) {
+    RCLCPP_INFO(this->get_logger(), "Refresh Machine Info");
     update_map();
-    needs_refresh = false;
+    publish_tf();
+    data_->needs_refresh = false;
   }
 }
 
@@ -87,7 +135,6 @@ map_msgs::msg::OccupancyGridUpdate convertOccupancyGridToOccupancyGridUpdate(
 MpsMapGen::~MpsMapGen() {}
 
 void MpsMapGen::update_map() {
-  RCLCPP_INFO(this->get_logger(), "Update");
   // Wait for the service to become available
   while (!map_client->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
@@ -100,20 +147,20 @@ void MpsMapGen::update_map() {
 
   // Create a request object
   auto request = std::make_shared<nav_msgs::srv::GetMap::Request>();
-  RCLCPP_INFO(this->get_logger(), "Request");
 
   // Call the service
   map_client->async_send_request(
       request, std::bind(&MpsMapGen::map_receive, this, std::placeholders::_1));
 }
+
 void MpsMapGen::map_receive(
     rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future) {
   try {
     auto response = future.get();
-    RCLCPP_INFO(this->get_logger(), "map size %li", response->map.data.size());
+    RCLCPP_DEBUG(this->get_logger(), "map size %li", response->map.data.size());
 
     if (response->map.data.size() == 0) {
-      needs_refresh = true;
+      data_->needs_refresh = true;
       return;
     }
 
@@ -124,10 +171,12 @@ void MpsMapGen::map_receive(
     Eigen::Vector2f origin(response->map.info.origin.position.x,
                            response->map.info.origin.position.y);
 
-    for (const auto &mps : mps_list) {
+    for (const auto &mps : data_->mps_list) {
+      RCLCPP_INFO(get_logger(), "MPS found %s", mps.name_.c_str());
       add_mps_to_map(mps.from_origin(origin), map_height, map_width, resolution,
                      response->map.data);
     }
+    publish_tf();
 
     // Publish the updated map
     map_update_publisher->publish(
@@ -137,6 +186,7 @@ void MpsMapGen::map_receive(
   } catch (const std::exception &e) {
     RCLCPP_ERROR(this->get_logger(), "Failed to call service: %s", e.what());
   }
+  publish_tf();
 }
 
 void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
@@ -160,28 +210,113 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
 
       // Check if the pixel is inside the rotated box
       if (std::abs(cx * cosAngle + cy * sinAngle) <=
-              mps_width / resolution / 2 &&
+              MPS::mps_width / resolution / 2 &&
           std::abs(-cx * sinAngle + cy * cosAngle) <=
-              mps_length / resolution / 2) {
+              MPS::mps_length / resolution / 2) {
         data[py * width + px] = 100;
       }
     }
   }
 }
-//@brief: returns if the mps needs to be set on the map
-bool MpsMapGen::set_mps(MPS mps) {
-  std::vector<MPS>::iterator is_in_map =
-      std::find(mps_list.begin(), mps_list.end(), mps.name_);
-  if (is_in_map == mps_list.end()) {
-    mps_list.push_back(mps);
-    return true;
+
+void MpsMapGen::publish_tf() {
+  // Publish transforms for each machine position
+  if (use_refbox_data_) {
+    for (const auto &mps : data_->mps_list) {
+
+      // Calculate the rotation angle in radians
+      double rotation_radians = mps.angle;
+
+      // Calculate the translation for the input point
+      tf2::Vector3 translation_input(
+          std::cos(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
+          std::sin(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
+          0.0);
+      translation_input += tf2::Vector3(mps.center_[0], mps.center_[1], 0.0);
+      // Calculate the direction vector from the input point to the center
+      tf2::Vector3 direction_input(mps.center_[0], mps.center_[1], 0.0);
+
+      // Create a transform message for machine input
+      geometry_msgs::msg::TransformStamped transform_input_msg;
+      transform_input_msg.header.stamp = this->now(); // Use current ROS time
+      transform_input_msg.header.frame_id = "map";    // Parent frame ID
+      transform_input_msg.child_frame_id =
+          mps.name_ + "-INPUT"; // Child frame ID
+      transform_input_msg.transform.translation.x = translation_input.x();
+      transform_input_msg.transform.translation.y = translation_input.y();
+      transform_input_msg.transform.translation.z = translation_input.z();
+
+      // Set the orientation to point towards the center
+      tf2::Quaternion quaternion_input;
+      quaternion_input.setRPY(
+          0.0, 0.0,
+          std::atan2(direction_input.y() - translation_input.y(),
+                     direction_input.x() - translation_input.x()));
+      transform_input_msg.transform.rotation = tf2::toMsg(quaternion_input);
+
+      // Publish the transform for the input point
+      tf_broadcaster_->sendTransform(transform_input_msg);
+
+      // Calculate the translation for the output point
+      tf2::Vector3 translation_output(
+          -std::cos(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
+          -std::sin(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
+          0.0);
+      translation_output += tf2::Vector3(mps.center_[0], mps.center_[1], 0.0);
+
+      // Calculate the direction vector from the output point to the center
+      tf2::Vector3 direction_output(mps.center_[0], mps.center_[1], 0.0);
+
+      // Create a transform message for machine output
+      geometry_msgs::msg::TransformStamped transform_output_msg;
+      transform_output_msg.header.stamp = this->now(); // Use current ROS time
+      transform_output_msg.header.frame_id = "map";    // Parent frame ID
+      transform_output_msg.child_frame_id =
+          mps.name_ + "-OUTPUT"; // Child frame ID
+      transform_output_msg.transform.translation.x = translation_output.x();
+      transform_output_msg.transform.translation.y = translation_output.y();
+      transform_output_msg.transform.translation.z = translation_output.z();
+
+      // Set the orientation to point towards the center
+      tf2::Quaternion quaternion_output;
+      quaternion_output.setRPY(
+          0.0, 0.0,
+          std::atan2(direction_output.y() - translation_output.y(),
+                     direction_output.x() - translation_output.x()));
+      transform_output_msg.transform.rotation = tf2::toMsg(quaternion_output);
+
+      // Publish the transform for the output point
+      tf_broadcaster_->sendTransform(transform_output_msg);
+      // Also send center
+      tf2::Vector3 translation_center =
+          tf2::Vector3(mps.center_[0], mps.center_[1], 0.0);
+      transform_output_msg.child_frame_id = mps.name_;
+      transform_output_msg.transform.translation.x = translation_center.x();
+      transform_output_msg.transform.translation.y = translation_center.y();
+      transform_output_msg.transform.translation.z = translation_center.z();
+      tf_broadcaster_->sendTransform(transform_output_msg);
+    }
   }
-
-  if (*is_in_map == mps)
-    return false;
-
-  *is_in_map = mps;
-  return true;
+  if (wait_pos_gen_) {
+    std::map<std::string, Eigen::Vector3f> wait_pos =
+        wait_pos_gen_->generate_wait_pos(4);
+    for (const auto &wait_pos_entry : wait_pos) {
+      geometry_msgs::msg::TransformStamped transform_wait_msg;
+      transform_wait_msg.header.stamp = this->now(); // Use current ROS time
+      transform_wait_msg.header.frame_id = "map";    // Parent frame ID
+      transform_wait_msg.child_frame_id = wait_pos_entry.first;
+      transform_wait_msg.transform.translation.x = wait_pos_entry.second[0];
+      transform_wait_msg.transform.translation.y = wait_pos_entry.second[1];
+      transform_wait_msg.transform.translation.z = 0.0;
+      tf2::Quaternion quat;
+      quat.setRPY(
+          0, 0,
+          wait_pos_entry.second[2]); // Set roll, pitch, and yaw (only yaw is
+                                     // non-zero for rotation around z-axis)
+      transform_wait_msg.transform.rotation = tf2::toMsg(quat);
+      tf_broadcaster_->sendTransform(transform_wait_msg);
+    }
+  }
 }
 
 } // namespace mps_map_gen
