@@ -4,14 +4,16 @@
   <name>mps_map_gen</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="tom.github@runbox.com">tom</maintainer>
-  <license>TODO: License declaration</license>
+  <maintainer email="viehmann@kbsg.rwth-aachen.de">Tarik Viehmann</maintainer>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>tf2_ros</build_depend>
 
   <depend>rclcpp</depend>
+  <depend>rcll_protobuf_msgs</depend>
+  <depend>rcll_protobuf_cpp</depend>
   <depend>nav_msgs</depend>
   <depend>map_msgs</depend>
   <depend>tf2_msgs</depend>
