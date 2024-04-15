@@ -26,7 +26,6 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
   use_refbox_data_ = this->get_parameter("get_data_from_refbox").as_bool();
   publish_wait_pos_ = this->get_parameter("publish_wait_pos").as_bool();
   if (publish_wait_pos_) {
-    RCLCPP_INFO(get_logger(), "ACTSCHUALLY");
     wait_pos_gen_ = std::make_unique<WaitPosGen>(data_);
   }
 

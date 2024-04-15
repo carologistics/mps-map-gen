@@ -73,7 +73,20 @@ void RefboxConnector::mirror_mps(const MPS &mps) {
     } else {
       mirrored_name[0] = 'C';
     }
-    float mirrored_rot = mps.angle + M_PI;
+    float mirrored_rot = 0;
+    if (mps.angle == 0 || mps.angle == M_PI) {
+      mirrored_rot = mps.angle + M_PI;
+    } else if (mps.angle == 45 * M_PI / 180. ||
+               mps.angle == 135 * M_PI / 180.) {
+      mirrored_rot = mps.angle + M_PI / 2;
+    } else if (mps.angle == 90 * M_PI / 180. ||
+               mps.angle == 270 * M_PI / 180.) {
+      mirrored_rot = mps.angle;
+    } else {
+      printf("THIS SHOULD NEVER HAPPEN");
+      fflush(stdout);
+    }
+
     if (std::abs(mps.center_[0]) + 1 > data_->field_width ||
         std::abs(mps.center_[1]) + 1 > data_->field_height ||
         mps.center_[1] - 1 < 0 ||
