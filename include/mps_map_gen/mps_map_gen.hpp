@@ -33,12 +33,19 @@ private:
   void map_receive(rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future);
   bool set_mps(MPS mps);
   void update_callback();
+  void add_boundary_to_map(int map_height, int map_width, double resolution,
+                           const Eigen::Vector2f &origin,
+                           std::vector<int8_t> &data);
 
   rclcpp::Subscription<tf2_msgs::msg::TFMessage>::SharedPtr mps_tf;
   rclcpp::Client<nav_msgs::srv::GetMap>::SharedPtr map_client;
   rclcpp::Publisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
       map_update_publisher;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pubsliher;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr
+      bounded_map_publisher;
+  rclcpp::Publisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
+      bounded_map_update_publisher;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener;
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_;

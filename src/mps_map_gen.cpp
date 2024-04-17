@@ -78,6 +78,11 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
           "mps_map_updates", qos_update);
   map_pubsliher =
       this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_map", qos);
+  bounded_map_publisher =
+      this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_bounded", qos);
+  bounded_map_update_publisher =
+      this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
+          "mps_map_updates", qos_update);
 
   update_map();
 
@@ -181,6 +186,11 @@ void MpsMapGen::map_receive(
     map_update_publisher->publish(
         convertOccupancyGridToOccupancyGridUpdate(response->map));
     map_pubsliher->publish(response->map);
+    add_boundary_to_map(map_height, map_width, resolution, origin,
+                        response->map.data);
+    bounded_map_update_publisher->publish(
+        convertOccupancyGridToOccupancyGridUpdate(response->map));
+    bounded_map_publisher->publish(response->map);
     RCLCPP_INFO(this->get_logger(), "published");
   } catch (const std::exception &e) {
     RCLCPP_ERROR(this->get_logger(), "Failed to call service: %s", e.what());
@@ -188,16 +198,36 @@ void MpsMapGen::map_receive(
   publish_tf();
 }
 
+void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
+                                    double resolution,
+                                    const Eigen::Vector2f &origin,
+                                    std::vector<int8_t> &data) {
+  Eigen::Vector2f center(data_->field_width / 2., data_->field_height / 2.);
+  int x_factor = 1;
+  if (data_->field_mirrored) {
+    center[0] = 0;
+    x_factor = 2;
+  }
+
+  MPS new_mps(center, Eigen::Rotation2Df(0.), "map_boundary",
+              data_->field_width * x_factor, data_->field_height);
+  new_mps = new_mps.from_origin(origin);
+  add_mps_to_map(new_mps, map_height, map_width, resolution, data);
+}
+
 void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
                                double resolution, std::vector<int8_t> &data) {
-
   float cosAngle = std::cos(mps.angle);
   float sinAngle = std::sin(mps.angle);
+
   // Clamp the bounding box to image boundaries
   int minX = std::max(0, mps.GetMin(resolution).x());
   int minY = std::max(0, mps.GetMin(resolution).y());
   int maxX = std::min(width - 1, mps.GetMax(resolution).x());
   int maxY = std::min(height - 1, mps.GetMax(resolution).y());
+
+  // Border size
+  int borderSize = 3;
 
   // Iterate over the pixels within the bounding box
   for (int py = minY; py <= maxY; ++py) {
@@ -207,12 +237,14 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
       int cx = px - mps_x;
       int cy = py - mps_y;
 
-      // Check if the pixel is inside the rotated box
-      if (std::abs(cx * cosAngle + cy * sinAngle) <=
-              MPS::mps_width / resolution / 2 &&
-          std::abs(-cx * sinAngle + cy * cosAngle) <=
-              MPS::mps_length / resolution / 2) {
-        data[py * width + px] = 100;
+      // Calculate distances to each side of the rectangle
+      float distX = std::abs(cx * cosAngle + cy * sinAngle);
+      float distY = std::abs(-cx * sinAngle + cy * cosAngle);
+
+      // Check if the pixel is on the border of the rectangle
+      if (std::abs(distX - mps.mps_width / resolution / 2) <= borderSize ||
+          std::abs(distY - mps.mps_length / resolution / 2) <= borderSize) {
+        data[py * width + px] = 100; // Set pixel to some value for border
       }
     }
   }
@@ -228,8 +260,8 @@ void MpsMapGen::publish_tf() {
 
       // Calculate the translation for the input point
       tf2::Vector3 translation_input(
-          std::cos(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
-          std::sin(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
+          std::cos(rotation_radians) * (mps.mps_width / 2.0 + approach_dist_),
+          std::sin(rotation_radians) * (mps.mps_width / 2.0 + approach_dist_),
           0.0);
       translation_input += tf2::Vector3(mps.center_[0], mps.center_[1], 0.0);
       // Calculate the direction vector from the input point to the center
@@ -258,8 +290,8 @@ void MpsMapGen::publish_tf() {
 
       // Calculate the translation for the output point
       tf2::Vector3 translation_output(
-          -std::cos(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
-          -std::sin(rotation_radians) * (MPS::mps_width / 2.0 + approach_dist_),
+          -std::cos(rotation_radians) * (mps.mps_width / 2.0 + approach_dist_),
+          -std::sin(rotation_radians) * (mps.mps_width / 2.0 + approach_dist_),
           0.0);
       translation_output += tf2::Vector3(mps.center_[0], mps.center_[1], 0.0);
 

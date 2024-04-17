@@ -33,7 +33,7 @@ def generate_launch_description():
 
     # Define launch configuration variables
     get_data_from_refbox = LaunchConfiguration('get_data_from_refbox', default=True)
-    namespace = LaunchConfiguration('namespace', default=True)
+    namespace = LaunchConfiguration('namespace', default="")
     map_client = LaunchConfiguration('map_client', default="/map_server/map")
     publish_wait_pos = LaunchConfiguration('publish_wait_pos', default=True)
     peer_address = LaunchConfiguration('peer_address', default="127.0.0.1")

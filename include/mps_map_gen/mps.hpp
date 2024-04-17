@@ -13,16 +13,20 @@ class MPS {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   MPS(geometry_msgs::msg::TransformStamped tf, std::string name);
-  MPS(Eigen::Vector2f center, Eigen::Rotation2Df rot, std::string name);
+  MPS(Eigen::Vector2f center, Eigen::Rotation2Df rot, std::string name,
+      double width = MPS::default_mps_width,
+      double length = MPS::default_mps_length);
 
   // TODO: CONFIG
-  static constexpr double mps_length = 0.7;
-  static constexpr double mps_width = 0.35;
+  static constexpr double default_mps_length = 0.7;
+  static constexpr double default_mps_width = 0.35;
 
   MPS from_origin(Eigen::Vector2f origin) const;
 
   Eigen::Vector2f corners[4];
   Eigen::Vector2f center_;
+  double mps_width;
+  double mps_length;
   float angle;
   std::string name_;
 
