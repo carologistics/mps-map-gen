@@ -78,8 +78,8 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
           "mps_map_updates", qos_update);
   map_pubsliher =
       this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_map", qos);
-  bounded_map_publisher =
-      this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_bounded", qos);
+  bounded_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+      "mps_map_bounded", qos);
   bounded_map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
           "mps_map_updates", qos_update);
