@@ -35,10 +35,12 @@ def generate_launch_description():
     get_data_from_refbox = LaunchConfiguration('get_data_from_refbox', default=True)
     namespace = LaunchConfiguration('namespace', default="")
     map_client = LaunchConfiguration('map_client', default="/map_server/map")
-    publish_wait_pos = LaunchConfiguration('publish_wait_pos', default=True)
+    publish_wait_pos = LaunchConfiguration('publish_wait_pos', default="true")
     peer_address = LaunchConfiguration('peer_address', default="127.0.0.1")
-    recv_port_private = LaunchConfiguration('recv_port_private', default=4441)
-    recv_port_public = LaunchConfiguration('recv_port_public', default=4444)
+    recv_port_private = LaunchConfiguration('recv_port_private', default="4441")
+    recv_port_public = LaunchConfiguration('recv_port_public', default="4444")
+    field_width = LaunchConfiguration('field_width', default="7")
+    field_height = LaunchConfiguration('field_height', default="8")
     crypto_key = LaunchConfiguration('crypto_key', default="randomkey")
     # resolution = LaunchConfiguration('resolution', default=0.05)
     proto_path = LaunchConfiguration('proto_path', default=rcll_protobuf_msgs_share_dir + '/rcll-protobuf-msgs/')
@@ -58,7 +60,9 @@ def generate_launch_description():
             {'recv_port_public': recv_port_public},
             {'crypto_key': crypto_key},
             {'map_client': map_client},
-            {'proto_path': proto_path}
+            {'proto_path': proto_path},
+            {'field_width': field_width},
+            {'field_height': field_height}
         ]
     )
 

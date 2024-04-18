@@ -16,6 +16,8 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
   declare_parameter<std::string>("peer_address", "127.0.0.1");
   declare_parameter<unsigned short>("recv_port_private", 4441);
   declare_parameter<unsigned short>("recv_port_public", 4444);
+  declare_parameter<unsigned short>("field_width", 7);
+  declare_parameter<unsigned short>("field_height", 8);
   declare_parameter<std::string>("crypto_key", "randomkey");
   declare_parameter<std::string>(
       "proto_path",
@@ -23,6 +25,8 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
           "/rcll-protobuf-msgs/");
 
   data_ = std::make_shared<MpsMapGenData>();
+  data_->field_width = get_parameter("field_width").as_int();
+  data_->field_height = get_parameter("field_height").as_int();
   use_refbox_data_ = this->get_parameter("get_data_from_refbox").as_bool();
   publish_wait_pos_ = this->get_parameter("publish_wait_pos").as_bool();
   if (publish_wait_pos_) {
