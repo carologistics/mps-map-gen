@@ -212,7 +212,7 @@ WaitPosGen::generate_mps_wait_pos(std::vector<Eigen::Vector2i> &free_zones) {
     double wait_ori = std::atan2(ori_vec.x(), ori_vec.y());
     auto mid_point_input = zone_to_point(*(free_zones.begin()));
     res.emplace(
-        mps.name_ + "-I-WAIT",
+        "WAIT-" + mps.name_ + "-INPUT",
         Eigen::Vector3f(mid_point_input[0], mid_point_input[1], wait_ori));
     std::sort(
         free_zones.begin(), free_zones.end(),
@@ -225,7 +225,7 @@ WaitPosGen::generate_mps_wait_pos(std::vector<Eigen::Vector2i> &free_zones) {
     wait_ori = std::atan2(ori_vec.x(), ori_vec.y());
     auto mid_point_output = zone_to_point(*(free_zones.begin()));
     res.emplace(
-        mps.name_ + "-O-WAIT",
+        "WAIT-" + mps.name_ + "-OUTPUT",
         Eigen::Vector3f(mid_point_output[0], mid_point_output[1], wait_ori));
   }
   return res;
