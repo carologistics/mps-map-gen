@@ -203,14 +203,18 @@ void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
                                     const Eigen::Vector2f &origin,
                                     std::vector<int8_t> &data) {
   Eigen::Vector2f center(data_->field_width / 2., data_->field_height / 2.);
-  int x_factor = 1;
-  if (data_->field_mirrored) {
-    center[0] = 0;
-    x_factor = 2;
-  }
-
+  center[0] = 0;
+  int x_factor = 2;
   MPS new_mps(center, Eigen::Rotation2Df(0.), "map_boundary",
               data_->field_width * x_factor, data_->field_height);
+  if (!data_->field_mirrored) {
+    Eigen::Vector2f center2(data_->field_width / 2., data_->field_height / 2.);
+    MPS new_mps2(center2, Eigen::Rotation2Df(0.), "map_boundary",
+                 data_->field_width, data_->field_height);
+    new_mps2 = new_mps2.from_origin(origin);
+    add_mps_to_map(new_mps2, map_height, map_width, resolution, data);
+  }
+
   new_mps = new_mps.from_origin(origin);
   add_mps_to_map(new_mps, map_height, map_width, resolution, data);
 }
