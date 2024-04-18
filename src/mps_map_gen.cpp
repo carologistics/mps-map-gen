@@ -200,11 +200,14 @@ void MpsMapGen::map_receive(
     map_update_publisher->publish(
         convertOccupancyGridToOccupancyGridUpdate(response->map));
     map_pubsliher->publish(response->map);
-    add_boundary_to_map(map_height, map_width, resolution, origin,
-                        response->map.data);
+    auto map_msg = response->map;
+    std::vector<int8_t> empty_map(response->map.data.size(), 0);
+
+    add_boundary_to_map(map_height, map_width, resolution, origin, empty_map);
+    map_msg.data = empty_map;
     bounded_map_update_publisher->publish(
-        convertOccupancyGridToOccupancyGridUpdate(response->map));
-    bounded_map_publisher->publish(response->map);
+        convertOccupancyGridToOccupancyGridUpdate(map_msg));
+    bounded_map_publisher->publish(map_msg);
     RCLCPP_INFO(this->get_logger(), "published");
   } catch (const std::exception &e) {
     RCLCPP_ERROR(this->get_logger(), "Failed to call service: %s", e.what());
@@ -226,26 +229,29 @@ void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
     MPS new_mps2(center2, Eigen::Rotation2Df(0.), "map_boundary",
                  data_->field_width, data_->field_height);
     new_mps2 = new_mps2.from_origin(origin);
-    add_mps_to_map(new_mps2, map_height, map_width, resolution, data);
+    add_mps_to_map(new_mps2, map_height, map_width, resolution, data, 25, true);
   }
 
   new_mps = new_mps.from_origin(origin);
-  add_mps_to_map(new_mps, map_height, map_width, resolution, data);
+  add_mps_to_map(new_mps, map_height, map_width, resolution, data, 25, true);
 }
 
 void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
-                               double resolution, std::vector<int8_t> &data) {
+                               double resolution, std::vector<int8_t> &data,
+                               int border_size, bool inner) {
   float cosAngle = std::cos(mps.angle);
   float sinAngle = std::sin(mps.angle);
+  int offset = 0;
+  // if(!inner) {
+  //   offset = borderSize;
+  //  }
 
+  int borderSize = 3;
   // Clamp the bounding box to image boundaries
   int minX = std::max(0, mps.GetMin(resolution).x());
   int minY = std::max(0, mps.GetMin(resolution).y());
   int maxX = std::min(width - 1, mps.GetMax(resolution).x());
   int maxY = std::min(height - 1, mps.GetMax(resolution).y());
-
-  // Border size
-  int borderSize = 3;
 
   // Iterate over the pixels within the bounding box
   for (int py = minY; py <= maxY; ++py) {
@@ -258,7 +264,12 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
       // Calculate distances to each side of the rectangle
       float distX = std::abs(cx * cosAngle + cy * sinAngle);
       float distY = std::abs(-cx * sinAngle + cy * cosAngle);
-
+      double width = mps.mps_width;
+      double length = mps.mps_length;
+      // if(!inner) {
+      // width += borderSize;
+      // length += borderSize;
+      // }
       // Check if the pixel is on the border of the rectangle
       if (std::abs(distX - mps.mps_width / resolution / 2) <= borderSize ||
           std::abs(distY - mps.mps_length / resolution / 2) <= borderSize) {
