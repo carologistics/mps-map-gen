@@ -28,6 +28,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       "proto_path",
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
           "/rcll-protobuf-msgs/");
+  namespace_ = this->get_parameter("namespace").as_string();  
   approach_dist_ = get_parameter("approach_dist").as_double();
   data_ = std::make_shared<MpsMapGenData>();
   data_->field_width = get_parameter("field_width").as_int();
@@ -89,14 +90,14 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
 
   map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-          "mps_map_updates", qos_update);
+      namespace_+"/mps_map_updates", qos_update);
   map_pubsliher =
-      this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_map", qos);
+      this->create_publisher<nav_msgs::msg::OccupancyGrid>(namespace_+"/mps_map", qos);
   bounded_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-      "mps_map_bounded", qos);
+      namespace_+ "/keepout_filter_mask", qos);
   bounded_map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-          "mps_map_updates", qos_update);
+      namespace_+"/keepout_filter_mask_updates", qos_update);
 
   update_map();
 
@@ -200,6 +201,8 @@ void MpsMapGen::map_receive(
     map_update_publisher->publish(
         convertOccupancyGridToOccupancyGridUpdate(response->map));
     map_pubsliher->publish(response->map);
+
+    RCLCPP_INFO(this->get_logger(), std::to_string(response->map.data.size()).c_str());
     auto map_msg = response->map;
     std::vector<int8_t> empty_map(response->map.data.size(), 0);
 
@@ -238,15 +241,15 @@ void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
 
 void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
                                double resolution, std::vector<int8_t> &data,
-                               int border_size, bool inner) {
+                               int borderSize, bool inner) {
   float cosAngle = std::cos(mps.angle);
   float sinAngle = std::sin(mps.angle);
   int offset = 0;
-  // if(!inner) {
-  //   offset = borderSize;
-  //  }
+  if(!inner) {
+    offset = borderSize;
+   }
 
-  int borderSize = 3;
+  //int borderSize = 3;
   // Clamp the bounding box to image boundaries
   int minX = std::max(0, mps.GetMin(resolution).x());
   int minY = std::max(0, mps.GetMin(resolution).y());
@@ -264,8 +267,8 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
       // Calculate distances to each side of the rectangle
       float distX = std::abs(cx * cosAngle + cy * sinAngle);
       float distY = std::abs(-cx * sinAngle + cy * cosAngle);
-      double width = mps.mps_width;
-      double length = mps.mps_length;
+      //double width = mps.mps_width;
+      //double length = mps.mps_length;
       // if(!inner) {
       // width += borderSize;
       // length += borderSize;
