@@ -49,8 +49,6 @@ private:
   std::map<std::string, Eigen::Vector3f>
   generate_free_wait_pos(const std::vector<std::vector<bool>> &occupancy_grid,
                          int num_points);
-
-  double approach_dist_ = 0.3;
 };
 
 } // namespace mps_map_gen
