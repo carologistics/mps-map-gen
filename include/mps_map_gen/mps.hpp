@@ -17,7 +17,6 @@ public:
       double width = MPS::default_mps_width,
       double length = MPS::default_mps_length);
 
-  // TODO: CONFIG
   static constexpr double default_mps_length = 0.7;
   static constexpr double default_mps_width = 0.35;
 
