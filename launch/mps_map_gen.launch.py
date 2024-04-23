@@ -37,7 +37,8 @@ def generate_launch_description():
     map_client = LaunchConfiguration('map_client', default="/map_server/map")
     publish_wait_pos = LaunchConfiguration('publish_wait_pos', default="true")
     peer_address = LaunchConfiguration('peer_address', default="127.0.0.1")
-    recv_port_private = LaunchConfiguration('recv_port_private', default="4441")
+    recv_port_magenta = LaunchConfiguration('recv_port_magenta', default="4442")
+    recv_port_cyan = LaunchConfiguration('recv_port_cyan', default="4441")
     recv_port_public = LaunchConfiguration('recv_port_public', default="4444")
     field_width = LaunchConfiguration('field_width', default="7")
     field_height = LaunchConfiguration('field_height', default="8")
@@ -56,7 +57,8 @@ def generate_launch_description():
             {'get_data_from_refbox': get_data_from_refbox},
             {'publish_wait_pos': publish_wait_pos},
             {'peer_address': peer_address},
-            {'recv_port_private': recv_port_private},
+            {'recv_port_magenta': recv_port_magenta},
+            {'recv_port_cyan': recv_port_cyan},
             {'recv_port_public': recv_port_public},
             {'crypto_key': crypto_key},
             {'map_client': map_client},

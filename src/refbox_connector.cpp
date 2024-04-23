@@ -1,3 +1,4 @@
+#include "rcll_protobuf_cpp/GameState.pb.h"
 #include "rcll_protobuf_cpp/MachineInfo.pb.h"
 #include "rcll_protobuf_cpp/VersionInfo.pb.h"
 
@@ -7,20 +8,20 @@
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 namespace mps_map_gen {
-RefboxConnector::RefboxConnector(std::string &peer_address,
-                                 unsigned short recv_port_public,
-                                 unsigned short recv_port_private,
-                                 std::string &crypto_key,
-                                 std::string &proto_path,
-                                 std::shared_ptr<MpsMapGenData> data) {
+RefboxConnector::RefboxConnector(
+    const std::string &peer_address, const unsigned short recv_port_public,
+    const unsigned short recv_port_magenta, const unsigned short recv_port_cyan,
+    const std::string &team_name, const std::string &crypto_key,
+    const std::string &proto_path, std::shared_ptr<MpsMapGenData> data,
+    const rclcpp::Logger &logger)
+    : peer_address_(peer_address), team_name_(team_name),
+      crypto_key_(crypto_key), recv_port_magenta_(recv_port_magenta),
+      recv_port_cyan_(recv_port_cyan), logger_(logger) {
   data_ = data;
-
   // setup protobuf communication
   std::vector<std::string> proto_path_vec = {proto_path};
   message_register_ =
       std::make_shared<protobuf_comm::MessageRegister>(proto_path_vec);
-  private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(
-      peer_address, recv_port_private, message_register_.get(), crypto_key);
 
   private_peer_->signal_received().connect(
       boost::bind(&RefboxConnector::handle_peer_msg, this,
@@ -107,7 +108,7 @@ void RefboxConnector::handle_peer_msg(
     boost::asio::ip::udp::endpoint &, uint16_t, uint16_t,
     std::shared_ptr<google::protobuf::Message> msg_ptr) {
   if (!msg_ptr) {
-    // RCLCPP_DEBUG(get_logger(), "Received invalid msg ptr");
+    RCLCPP_DEBUG(get_logger(), "Received invalid msg ptr");
     return;
   }
   const google::protobuf::Descriptor *desc = msg_ptr->GetDescriptor();
@@ -139,6 +140,8 @@ void RefboxConnector::handle_peer_msg(
       for (const auto &conf : version_info_msg->configuration()) {
         if (conf.name() == "field_width" &&
             static_cast<uint32_t>(data_->field_width) != conf.integer_value()) {
+          RCLCPP_DEBUG(this->get_logger(), "Setting field width to %i",
+                       conf.integer_value());
           std::lock_guard<std::mutex> lock(data_->data_mutex);
           data_->field_width = conf.integer_value();
           data_->needs_refresh = true;
@@ -146,20 +149,45 @@ void RefboxConnector::handle_peer_msg(
         if (conf.name() == "field_height" &&
             static_cast<uint32_t>(data_->field_height) !=
                 conf.integer_value()) {
+          RCLCPP_DEBUG(this->get_logger(), "Setting field height to %i",
+                       conf.integer_value());
           std::lock_guard<std::mutex> lock(data_->data_mutex);
           data_->field_height = conf.integer_value();
           data_->needs_refresh = true;
         }
         if (conf.name() == "field_mirrored" &&
             conf.boolean_value() != data_->field_mirrored) {
+          RCLCPP_DEBUG(this->get_logger(), "Setting field mirrored to %s",
+                       conf.boolean_value() ? "true" : "false");
           std::lock_guard<std::mutex> lock(data_->data_mutex);
           data_->field_mirrored = conf.boolean_value();
           data_->needs_refresh = true;
         }
       }
     }
+  } else if (desc->name() == "GameState") {
+    const llsf_msgs::GameState *game_state_msg =
+        dynamic_cast<const llsf_msgs::GameState *>(msg_ptr.get());
+    if (game_state_msg->team_cyan() == team_name_) {
+      RCLCPP_INFO(this->get_logger(),
+                  "Listening to CYAN peer %s:%i for team %s",
+                  peer_address_.c_str(), recv_port_cyan_, team_name_.c_str());
+      private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(
+          peer_address_, recv_port_cyan_, message_register_.get(), crypto_key_);
+    } else if (game_state_msg->team_magenta() == team_name_) {
+      RCLCPP_INFO(
+          this->get_logger(), "Listening to MAGENTA peer %s:%i for team %s",
+          peer_address_.c_str(), recv_port_magenta_, team_name_.c_str());
+      private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(
+          peer_address_, recv_port_magenta_, message_register_.get(),
+          crypto_key_);
+    } else if (!private_peer_) {
+      RCLCPP_INFO(this->get_logger(),
+                  "Waiting for RefBox to send information on team %s",
+                  team_name_.c_str());
+    }
   } else {
-    // RCLCPP_INFO(this->get_logger(), "Received %s", desc->name().c_str());
+    RCLCPP_DEBUG(this->get_logger(), "Received %s", desc->name().c_str());
   }
 }
 

@@ -14,11 +14,13 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
   declare_parameter<bool>("get_data_from_refbox", true);
   declare_parameter<bool>("publish_wait_pos", true);
   declare_parameter<std::string>("peer_address", "127.0.0.1");
-  declare_parameter<unsigned short>("recv_port_private", 4441);
+  declare_parameter<unsigned short>("recv_port_magenta", 4442);
+  declare_parameter<unsigned short>("recv_port_cyan", 4441);
   declare_parameter<unsigned short>("recv_port_public", 4444);
   declare_parameter<unsigned short>("field_width", 7);
   declare_parameter<unsigned short>("field_height", 8);
   declare_parameter<std::string>("crypto_key", "randomkey");
+  declare_parameter<std::string>("team_name", "Carologistics");
   declare_parameter<std::string>(
       "proto_path",
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
@@ -34,22 +36,26 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
   }
 
   std::string peer_address = this->get_parameter("peer_address").as_string();
-  unsigned short recv_port_private =
-      this->get_parameter("recv_port_private").as_int();
+  unsigned short recv_port_magenta =
+      this->get_parameter("recv_port_magenta").as_int();
+  unsigned short recv_port_cyan =
+      this->get_parameter("recv_port_cyan").as_int();
   unsigned short recv_port_public =
       this->get_parameter("recv_port_public").as_int();
 
   if (use_refbox_data_) {
-    RCLCPP_INFO(
-        this->get_logger(),
-        "Listening to %s on %i (public) and %i (private), using proto Path %s",
-        peer_address.c_str(), recv_port_public, recv_port_private,
-        this->get_parameter("proto_path").as_string().c_str());
+    RCLCPP_INFO(this->get_logger(),
+                "Listening to %s on %i (public) %i (magenta) %i (cyan), using "
+                "proto Path %s",
+                peer_address.c_str(), recv_port_public, recv_port_magenta,
+                recv_port_cyan,
+                this->get_parameter("proto_path").as_string().c_str());
+    std::string team_name = this->get_parameter("team_name").as_string();
     std::string crypto_key = this->get_parameter("crypto_key").as_string();
     std::string proto_path = this->get_parameter("proto_path").as_string();
     refbox_conn_ = std::make_unique<RefboxConnector>(
-        peer_address, recv_port_public, recv_port_private, crypto_key,
-        proto_path, data_);
+        peer_address, recv_port_public, recv_port_magenta, recv_port_cyan,
+        team_name, crypto_key, proto_path, data_, get_logger());
   } else {
     tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
@@ -113,7 +119,7 @@ void MpsMapGen::update_callback() {
   }
 
   if (data_->needs_refresh) {
-    RCLCPP_INFO(this->get_logger(), "Refresh Machine Info");
+    RCLCPP_INFO(this->get_logger(), "Refresh Map and TF data");
     update_map();
     publish_tf();
     data_->needs_refresh = false;
