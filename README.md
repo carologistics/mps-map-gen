@@ -15,8 +15,8 @@ After installing ROS2, create a fresh workspace and clone this repository and it
 ```bash
 mkdir -p ~/ros2/mps_map_gen_ws/src
 cd ~/ros2/mps_map_gen_ws/src
-git clone https://github.com/carologistics/mps_map_gen.git
-vcs import < ~/ros2/mps_map_gen_ws/src/mps-map-gen/dependencies.repos
+git clone https://github.com/carologistics/mps-map-gen.git
+vcs import --recursive < ~/ros2/mps_map_gen_ws/src/mps-map-gen/dependencies.repos
 ```
 
 ### Building
