@@ -66,7 +66,6 @@ private:
   bool use_refbox_data_ = true;
   bool publish_wait_pos_ = true;
 
-  double resolution_ = 0.0;
   double approach_dist_ = 0.3;
 };
 

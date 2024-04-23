@@ -45,15 +45,17 @@ ros2 launch mps_map_gen mps_map_gen.launch.py
 - map_client: name of the map client to connect to
 - field_width: initial field width in meters (may be overridden by information from the refbox)
 - field_height: initial field height in meters (may be overridden by information from the refbox)
+- approach_dist: distance between machine border and tf pose for alignment.
 
 ## Operation Modes
-It can operate in two different modes:
+This node can operate in two different modes:
 1) The node listens to the broadcasted protobuf messages of a running [refbox](https://github.com/robocup-logistics/rcll-refbox) to determine the field dimensions, the played team color (given a team name) and the ground-truth information of machines sent to that team.
-It additionally publishes static transforms (relative to the map frame) of the machines (e.g., named `M-BS`) with the x-axis pointing towards the machine's inpt side, as well as transforms in front and behind the machine that point towards it (e.g., `M-BS-INPUT` and `M-BS-OUTPUT`).
-These transforms can serve as useful navigation targets for robots that need to operate the machines.
 In this mode machines of the opposing teams are also mirrored according to the rules of the game.
 2) The other option is to run independently from the refbox and instead accept configurable values for field dimensions as well as static transforms describing the machine positions.
 For example, when it receives a transform named `M-BS`, it then transforms it to map frame before drawing an obstacle around it treating the transformed point as the center of a machine, and the rotation of the pose as description of the conveyor belt direction (the belt is following the x-axis of the target pose from machine output to input). The usage of this mode is recommended in cases where some low-level routines should be tested without a running refbox.
+
+This node additionally publishes static transforms (relative to the map frame) of the machines (e.g., named `M-BS`) with the x-axis pointing towards the machine's inpt side, as well as transforms in front and behind the machine that point towards it (e.g., `M-BS-INPUT` and `M-BS-OUTPUT`).
+These transforms can serve as useful navigation targets for robots that need to operate the machines.
 
 In both modes it requires the map to be aligned with the game's coordinate system (The x-dimension moves from left to right along the columns of the occupancy grid, while the y-dimension moves from bottom to top along the rows of the occupancy grid).
 In particular, **this tool does not support drawing over map servers that represent a rotated view of the game field**.
