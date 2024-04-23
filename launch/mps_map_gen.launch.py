@@ -42,6 +42,7 @@ def generate_launch_description():
     recv_port_public = LaunchConfiguration('recv_port_public', default="4444")
     field_width = LaunchConfiguration('field_width', default="7")
     field_height = LaunchConfiguration('field_height', default="8")
+    team_name = LaunchConfiguration('team_name', default="Carologistics")
     crypto_key = LaunchConfiguration('crypto_key', default="randomkey")
     # resolution = LaunchConfiguration('resolution', default=0.05)
     proto_path = LaunchConfiguration('proto_path', default=rcll_protobuf_msgs_share_dir + '/rcll-protobuf-msgs/')
@@ -60,6 +61,7 @@ def generate_launch_description():
             {'recv_port_magenta': recv_port_magenta},
             {'recv_port_cyan': recv_port_cyan},
             {'recv_port_public': recv_port_public},
+            {'team_name': team_name},
             {'crypto_key': crypto_key},
             {'map_client': map_client},
             {'proto_path': proto_path},

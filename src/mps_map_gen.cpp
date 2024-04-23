@@ -67,8 +67,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
 
   std::string ns = this->get_parameter("namespace").as_string();
   std::string client = this->get_parameter("map_client").as_string();
-  map_client =
-      this->create_client<nav_msgs::srv::GetMap>(ns + "/map_server/map");
+  map_client = this->create_client<nav_msgs::srv::GetMap>(ns + client);
 
   // Set QoS to match the expected settings for map visualization in RViz
   rclcpp::QoS qos(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
