@@ -7,6 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(map_msgs REQUIRED)
@@ -64,6 +65,7 @@ ament_target_dependencies(
   tf2_msgs
   tf2_geometry_msgs
   map_msgs
+  ament_index_cpp
   rcll_protobuf_cpp
   geometry_msgs)
 
