@@ -2,19 +2,25 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mps_map_gen</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="tom.github@runbox.com">tom</maintainer>
-  <license>TODO: License declaration</license>
+  <version>0.1.0</version>
+  <description>Map re-publisher that can add static transforms and obstacles according to RCLL game instances.</description>
+  <maintainer email="viehmann@kbsg.rwth-aachen.de">Tarik Viehmann</maintainer>
+  <license>GPLv2</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>tf2_ros</build_depend>
 
   <depend>rclcpp</depend>
+  <depend>rcll_protobuf_msgs</depend>
+  <depend>rcll_protobuf_cpp</depend>
   <depend>nav_msgs</depend>
   <depend>map_msgs</depend>
   <depend>tf2_msgs</depend>
+  <depend>Protobuf</depend>
+  <depend>ProtobufComm</depend>
+  <depend>boost_system</depend>
+
   <depend>tf2_geometry_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
