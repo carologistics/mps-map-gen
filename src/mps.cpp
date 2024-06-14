@@ -1,3 +1,5 @@
+// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+
 #include "mps_map_gen/mps.hpp"
 
 #include "tf2/utils.h"

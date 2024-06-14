@@ -1,3 +1,5 @@
+// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+
 #include "rcll_protobuf_cpp/GameState.pb.h"
 #include "rcll_protobuf_cpp/MachineInfo.pb.h"
 #include "rcll_protobuf_cpp/VersionInfo.pb.h"

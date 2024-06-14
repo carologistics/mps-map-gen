@@ -1,3 +1,5 @@
+// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+
 #include "mps_map_gen/mps_map_gen.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -26,7 +28,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       "proto_path",
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
           "/rcll-protobuf-msgs/");
-  approach_dist_= get_parameter("approach_dist").as_double();
+  approach_dist_ = get_parameter("approach_dist").as_double();
   data_ = std::make_shared<MpsMapGenData>();
   data_->field_width = get_parameter("field_width").as_int();
   data_->field_height = get_parameter("field_height").as_int();

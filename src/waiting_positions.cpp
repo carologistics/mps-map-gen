@@ -1,3 +1,5 @@
+// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+
 #include "mps_map_gen/waiting_positions.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/rclcpp.hpp"

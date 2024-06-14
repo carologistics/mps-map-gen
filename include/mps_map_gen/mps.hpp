@@ -1,3 +1,5 @@
+// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+
 #pragma once
 
 #include "tf2/LinearMath/Quaternion.h"

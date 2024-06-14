@@ -1,3 +1,5 @@
+// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+
 #ifndef MPS_MAP_GEN_WAITING_POSITIONS_H
 #define MPS_MAP_GEN_WAITING_POSITIONS_H
 
@@ -14,9 +16,9 @@ private:
   std::map<uint16_t, std::vector<Eigen::Vector2i>> zone_blocking_ = {
       {0,
        {
-        // 0°
-        {-1, 0}, //
-        {1, 0}   // x|x
+           // 0°
+           {-1, 0}, //
+           {1, 0}   // x|x
        }},
       {45,
        {         // 45°
@@ -28,16 +30,16 @@ private:
         {-1, 0}}},
       {90,
        {
-        // 90°
-        {0, 1}, //  x
-        {0, -1} //  -
-       }},      //  x
+           // 90°
+           {0, 1}, //  x
+           {0, -1} //  -
+       }},         //  x
       {135,
-       {{0, 1}, // 135°
-        {-1, 1},//
-        {-1, 0},// xx
-        {1, 0}, // x/x
-        {1, -1},//  xx
+       {{0, 1},     // 135°
+        {-1, 1},    //
+        {-1, 0},    // xx
+        {1, 0},     // x/x
+        {1, -1},    //  xx
         {0, -1}}}}; // 180°-315° is the same, see constructor.
 
   std::vector<Eigen::Vector2i> blocked_zones(const MPS &mps);
