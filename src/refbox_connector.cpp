@@ -191,6 +191,8 @@ void RefboxConnector::handle_peer_msg(
         private_peer_->signal_recv_error().connect(
             boost::bind(&RefboxConnector::handle_peer_recv_error, this,
                         boost::placeholders::_1, boost::placeholders::_2));
+        std::lock_guard<std::mutex> lock(data_->data_mutex);
+        data_->team_magenta = true;
       } else {
         RCLCPP_INFO(this->get_logger(),
                     "Waiting for RefBox to send information on team %s",
