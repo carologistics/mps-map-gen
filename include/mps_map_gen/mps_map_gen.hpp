@@ -51,6 +51,7 @@ private:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener;
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_;
+  rclcpp::TimerBase::SharedPtr static_tf_timer_;
 
   rclcpp::TimerBase::SharedPtr timer_;
 
