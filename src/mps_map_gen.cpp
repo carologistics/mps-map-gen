@@ -67,6 +67,8 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       500ms, std::bind(&MpsMapGen::update_callback, this));
 
   tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+  static_tf_timer_ =
+      this->create_wall_timer(5000ms, std::bind(&MpsMapGen::publish_tf, this));
 
   std::string ns = this->get_parameter("namespace").as_string();
   std::string client = this->get_parameter("map_client").as_string();
