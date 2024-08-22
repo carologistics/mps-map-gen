@@ -155,13 +155,13 @@ WaitPosGen::generate_wait_pos(int num_free_zones) {
   int y_max = data_->field_height;
   std::vector<Eigen::Vector2i> reserved_zones;
   if (data_->field_mirrored || !data_->team_magenta) {
+    x_max = data_->field_width;
     reserved_zones = {
         {x_max - 2, 2},
         {x_max - 2, 1},
         {x_max - 1, 1},
         {x_max, 1},
     };
-    x_max = data_->field_width;
   }
   if (data_->field_mirrored || data_->team_magenta) {
     x_min = -data_->field_width;
