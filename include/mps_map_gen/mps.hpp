@@ -42,6 +42,7 @@ public:
 };
 struct MpsMapGenData {
   bool needs_refresh = true;
+  bool team_magenta = false;
   int field_width = 0;
   int field_height = 0;
   bool field_mirrored = true;
