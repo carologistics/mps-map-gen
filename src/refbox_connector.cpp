@@ -162,11 +162,24 @@ void RefboxConnector::handle_peer_msg(
   } else if (desc->name() == "GameState") {
     const llsf_msgs::GameState *game_state_msg =
         dynamic_cast<const llsf_msgs::GameState *>(msg_ptr.get());
+    if (private_peer_ && team_color_ == TeamColor::MAGENTA &&
+        game_state_msg->team_magenta() != team_name_) {
+      RCLCPP_WARN(this->get_logger(), "Not listening to MAGENTA peer anymore!");
+      team_color_ = TeamColor::NONE;
+      private_peer_.reset();
+    }
+    if (private_peer_ && team_color_ == TeamColor::CYAN &&
+        game_state_msg->team_cyan() != team_name_) {
+      RCLCPP_WARN(this->get_logger(), "Not listening to CYAN peer anymore!");
+      team_color_ = TeamColor::NONE;
+      private_peer_.reset();
+    }
     if (!private_peer_) {
       if (game_state_msg->team_cyan() == team_name_) {
         RCLCPP_INFO(this->get_logger(),
                     "Listening to CYAN peer %s:%i for team %s",
                     peer_address_.c_str(), recv_port_cyan_, team_name_.c_str());
+        team_color_ = TeamColor::CYAN;
         private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(
             peer_address_, recv_port_cyan_, message_register_.get(),
             crypto_key_);
@@ -181,6 +194,7 @@ void RefboxConnector::handle_peer_msg(
         RCLCPP_INFO(
             this->get_logger(), "Listening to MAGENTA peer %s:%i for team %s",
             peer_address_.c_str(), recv_port_magenta_, team_name_.c_str());
+        team_color_ = TeamColor::MAGENTA;
         private_peer_ = std::make_shared<protobuf_comm::ProtobufBroadcastPeer>(
             peer_address_, recv_port_magenta_, message_register_.get(),
             crypto_key_);

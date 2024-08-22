@@ -45,6 +45,8 @@ private:
   std::string crypto_key_;
   unsigned short recv_port_magenta_;
   unsigned short recv_port_cyan_;
+  enum TeamColor { NONE, CYAN, MAGENTA };
+  TeamColor team_color_ = TeamColor::NONE;
 
   float get_x(std::string &zone_name);
   float get_y(std::string &zone_name);
