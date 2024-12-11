@@ -2,14 +2,15 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mps_map_gen</name>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <description>Map re-publisher that can add static transforms and obstacles according to RCLL game instances.</description>
   <maintainer email="viehmann@kbsg.rwth-aachen.de">Tarik Viehmann</maintainer>
-  <license>GPLv2</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>tf2_ros</build_depend>
+  <build_depend>protobuf-dev</build_depend>
 
   <depend>rclcpp</depend>
   <depend>rcll_protobuf_msgs</depend>
@@ -19,7 +20,10 @@
   <depend>tf2_msgs</depend>
   <depend>Protobuf</depend>
   <depend>ProtobufComm</depend>
+  <depend>boost</depend>
   <depend>boost_system</depend>
+  <depend>protobuf</depend>
+  <depend>protobuf_comm</depend>
 
   <depend>tf2_geometry_msgs</depend>
 
