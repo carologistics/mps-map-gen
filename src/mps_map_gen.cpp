@@ -23,7 +23,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
   declare_parameter<unsigned short>("field_height", 8);
   declare_parameter<std::string>("crypto_key", "randomkey");
   declare_parameter<std::string>("team_name", "Carologistics");
-  declare_parameter<double>("approach_dist", 0.3);
+  declare_parameter<double>("approach_dist", 0.65);
   declare_parameter<std::string>(
       "proto_path",
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
