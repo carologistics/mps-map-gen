@@ -31,8 +31,7 @@ public:
 private:
   void update_map();
   void add_mps_to_map(MPS mps, int height, int width, double resolution,
-                      std::vector<int8_t> &data, int thickness = 3,
-                      bool inner = true);
+                      std::vector<int8_t> &data, int thickness = 3);
   void map_receive(rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future);
   bool set_mps(MPS mps);
   void update_callback();
