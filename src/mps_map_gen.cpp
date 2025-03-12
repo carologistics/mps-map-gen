@@ -29,6 +29,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       "proto_path",
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
           "/rcll-protobuf-msgs/");
+  declare_parameter<double>("border_thickness", 0.4);
   namespace_ = this->get_parameter("namespace").as_string();  
   approach_dist_ = get_parameter("approach_dist").as_double();
   data_ = std::make_shared<MpsMapGenData>();
@@ -36,6 +37,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
   data_->field_height = get_parameter("field_height").as_int();
   use_refbox_data_ = this->get_parameter("get_data_from_refbox").as_bool();
   publish_wait_pos_ = this->get_parameter("publish_wait_pos").as_bool();
+  border_thickness_ = this->get_parameter("border_thickness").as_double();
   if (publish_wait_pos_) {
     wait_pos_gen_ = std::make_unique<WaitPosGen>(data_);
   }
@@ -227,12 +229,12 @@ void MpsMapGen::map_receive(
 void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
                                     double resolution,
                                     const Eigen::Vector2f &origin,
-                                    std::vector<int8_t> &data) {
+                                    std::vector<int8_t> &data) { 
   Eigen::Vector2f center(data_->field_width / 2., data_->field_height / 2.);
-  center[0] = 0;
+  center = Eigen::Vector2f(0, (data_->field_height / 2. - border_thickness_));
   int x_factor = 2;
   MPS new_mps(center, Eigen::Rotation2Df(0.), "map_boundary",
-              data_->field_width * x_factor, data_->field_height);
+              (data_->field_width * x_factor + 2 * border_thickness_), (data_->field_height + 2* border_thickness_));
   RCLCPP_INFO(this->get_logger(), "field_height value: %d", data_->field_height);
 
   RCLCPP_INFO(this->get_logger(), "field_width value: %d", data_->field_width);
@@ -241,11 +243,11 @@ void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
     MPS new_mps2(center2, Eigen::Rotation2Df(0.), "map_boundary",
                  data_->field_width, data_->field_height);
     new_mps2 = new_mps2.from_origin(origin);
-    add_mps_to_map(new_mps2, map_height, map_width, resolution, data, 25, false);
+    add_mps_to_map(new_mps2, map_height, map_width, resolution, data, border_thickness_ * 100, false);
   }
 
   new_mps = new_mps.from_origin(origin);
-  add_mps_to_map(new_mps, map_height, map_width, resolution, data, 25, true);
+  add_mps_to_map(new_mps, map_height, map_width, resolution, data, border_thickness_ * 100, true);
   RCLCPP_INFO(this->get_logger(), "Adding boundary to map");
 }
 
@@ -254,7 +256,6 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
                                int borderSize, bool inner) {
   float cosAngle = std::cos(mps.angle);
   float sinAngle = std::sin(mps.angle);
-  int offset = 25;
 
   //int borderSize = 3;
   // Clamp the bounding box to image boundaries
