@@ -1,4 +1,3 @@
-
 // Licensed under GPLv2+. See LICENSE file. Copyright Carologistics.
 
 #pragma once
