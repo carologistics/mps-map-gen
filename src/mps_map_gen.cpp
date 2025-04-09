@@ -30,7 +30,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
           "/rcll-protobuf-msgs/");
   declare_parameter<double>("border_thickness", 0.4);
-  namespace_ = this->get_parameter("namespace").as_string();  
+  namespace_ = this->get_parameter("namespace").as_string();
   approach_dist_ = get_parameter("approach_dist").as_double();
   data_ = std::make_shared<MpsMapGenData>();
   data_->field_width = get_parameter("field_width").as_int();
@@ -93,14 +93,14 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
 
   map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-      "/mps_map_updates", qos_update);
+          "/mps_map_updates", qos_update);
   map_pubsliher =
       this->create_publisher<nav_msgs::msg::OccupancyGrid>("/mps_map", qos);
   bounded_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-      namespace_+ "/keepout_filter_mask", qos);
+      namespace_ + "/keepout_filter_mask", qos);
   bounded_map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-      namespace_+"/keepout_filter_mask_updates", qos_update);
+          namespace_ + "/keepout_filter_mask_updates", qos_update);
 
   update_map();
 
@@ -206,7 +206,7 @@ void MpsMapGen::map_receive(
     map_pubsliher->publish(response->map);
 
     auto map_msg = response->map;
-    std::vector<int8_t> empty_map(response->map.data.size() , 0);
+    std::vector<int8_t> empty_map(response->map.data.size(), 0);
 
     add_boundary_to_map(map_height, map_width, resolution, origin, empty_map);
     map_msg.data = empty_map;
@@ -223,22 +223,26 @@ void MpsMapGen::map_receive(
 void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
                                     double resolution,
                                     const Eigen::Vector2f &origin,
-                                    std::vector<int8_t> &data) { 
+                                    std::vector<int8_t> &data) {
   Eigen::Vector2f center(0.0, data_->field_height / 2.);
   int x_factor = 2;
   MPS new_mps(center, Eigen::Rotation2Df(0.), "map_boundary",
-              (data_->field_width * x_factor + 2 * border_thickness_), (data_->field_height + 2* border_thickness_));
+              (data_->field_width * x_factor + 2 * border_thickness_),
+              (data_->field_height + 2 * border_thickness_));
 
   if (!data_->field_mirrored) {
     Eigen::Vector2f center2(data_->field_width / 2., data_->field_height / 2.);
     MPS new_mps2(center2, Eigen::Rotation2Df(0.), "map_boundary",
-                 (data_->field_width +2 * border_thickness_), (data_->field_height+2 * border_thickness_));
+                 (data_->field_width + 2 * border_thickness_),
+                 (data_->field_height + 2 * border_thickness_));
     new_mps2 = new_mps2.from_origin(origin);
-    add_mps_to_map(new_mps2, map_height, map_width, resolution, data, border_thickness_ * 100);
+    add_mps_to_map(new_mps2, map_height, map_width, resolution, data,
+                   border_thickness_ * 100);
   }
 
   new_mps = new_mps.from_origin(origin);
-  add_mps_to_map(new_mps, map_height, map_width, resolution, data, border_thickness_ * 100);
+  add_mps_to_map(new_mps, map_height, map_width, resolution, data,
+                 border_thickness_ * 100);
 }
 
 void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
