@@ -5,7 +5,7 @@
   <version>0.1.0</version>
   <description>Map re-publisher that can add static transforms and obstacles according to RCLL game instances.</description>
   <maintainer email="viehmann@kbsg.rwth-aachen.de">Tarik Viehmann</maintainer>
-  <license>GPLv2</license>
+  <license>GPLv2+</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

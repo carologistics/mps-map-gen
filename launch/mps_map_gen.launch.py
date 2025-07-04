@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+# Licensed under GPLv2+. See LICENSE file. Copyright Carologistics.
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 

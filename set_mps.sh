@@ -1,5 +1,5 @@
 #!/bin/sh
-# Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+# Licensed under GPLv2+. See LICENSE file. Copyright Carologistics.
 
 #base transform, identity quaternion
 ros2 run tf2_ros static_transform_publisher 0 0 0 0.0 0.0 0.0 1.0 map mps &
