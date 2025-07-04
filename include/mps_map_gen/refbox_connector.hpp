@@ -1,4 +1,4 @@
-// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+// Licensed under GPLv2+. See LICENSE file. Copyright Carologistics.
 
 #ifndef MPS_MAP_GEN_REFBOX_CONNECTOR_H
 #define MPS_MAP_GEN_REFBOX_CONNECTOR_H

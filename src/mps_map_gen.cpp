@@ -1,4 +1,4 @@
-// Licensed under GPLv2. See LICENSE file. Copyright Carologistics.
+// Licensed under GPLv2+. See LICENSE file. Copyright Carologistics.
 
 #include "mps_map_gen/mps_map_gen.hpp"
 #include "rclcpp/executors.hpp"
