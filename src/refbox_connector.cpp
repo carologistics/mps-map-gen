@@ -1,10 +1,9 @@
 // Licensed under GPLv2+. See LICENSE file. Copyright Carologistics.
 
+#include "mps_map_gen/refbox_connector.hpp"
 #include "rcll_protobuf_cpp/GameState.pb.h"
 #include "rcll_protobuf_cpp/MachineInfo.pb.h"
 #include "rcll_protobuf_cpp/VersionInfo.pb.h"
-
-#include "mps_map_gen/refbox_connector.hpp"
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -72,9 +71,12 @@ void RefboxConnector::mirror_mps(const MPS &mps) {
     float mirrored_rot = 0;
     if ((mps.angle < threshold) || (std::abs(mps.angle - M_PI) < threshold)) {
       mirrored_rot = mps.angle + M_PI;
-    } else if (std::abs(mps.angle - 45 * M_PI / 180.) < threshold ||
-               std::abs(mps.angle - 135 * M_PI / 180.) < threshold) {
+    } else if (std::abs(mps.angle - (45 * M_PI / 180.)) < threshold ||
+               std::abs(mps.angle - (225 * M_PI / 180.)) < threshold) {
       mirrored_rot = mps.angle + M_PI / 2.;
+    } else if (std::abs(mps.angle - (135 * M_PI / 180.)) < threshold ||
+               std::abs(mps.angle - (315 * M_PI / 180.)) < threshold) {
+      mirrored_rot = mps.angle - M_PI / 2.;
     } else if (std::abs(mps.angle - 90 * M_PI / 180.) < threshold ||
                std::abs(mps.angle - 270 * M_PI / 180.) < threshold) {
       mirrored_rot = mps.angle;

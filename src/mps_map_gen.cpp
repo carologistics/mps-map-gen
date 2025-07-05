@@ -6,6 +6,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <chrono>
+#include <cmath>
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;
@@ -28,12 +29,15 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       "proto_path",
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
           "/rcll-protobuf-msgs/");
+  declare_parameter<double>("border_thickness", 0.4);
+  namespace_ = this->get_parameter("namespace").as_string();
   approach_dist_ = get_parameter("approach_dist").as_double();
   data_ = std::make_shared<MpsMapGenData>();
   data_->field_width = get_parameter("field_width").as_int();
   data_->field_height = get_parameter("field_height").as_int();
   use_refbox_data_ = this->get_parameter("get_data_from_refbox").as_bool();
   publish_wait_pos_ = this->get_parameter("publish_wait_pos").as_bool();
+  border_thickness_ = this->get_parameter("border_thickness").as_double();
   if (publish_wait_pos_) {
     wait_pos_gen_ = std::make_unique<WaitPosGen>(data_);
   }
@@ -89,14 +93,14 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
 
   map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-          "mps_map_updates", qos_update);
+          "/mps_map_updates", qos_update);
   map_pubsliher =
-      this->create_publisher<nav_msgs::msg::OccupancyGrid>("mps_map", qos);
+      this->create_publisher<nav_msgs::msg::OccupancyGrid>("/mps_map", qos);
   bounded_map_publisher = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-      "mps_map_bounded", qos);
+      namespace_ + "/keepout_filter_mask", qos);
   bounded_map_update_publisher =
       this->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-          "mps_map_updates", qos_update);
+          namespace_ + "/keepout_filter_mask_updates", qos_update);
 
   update_map();
 
@@ -200,11 +204,15 @@ void MpsMapGen::map_receive(
     map_update_publisher->publish(
         convertOccupancyGridToOccupancyGridUpdate(response->map));
     map_pubsliher->publish(response->map);
-    add_boundary_to_map(map_height, map_width, resolution, origin,
-                        response->map.data);
+
+    auto map_msg = response->map;
+    std::vector<int8_t> empty_map(response->map.data.size(), 0);
+
+    add_boundary_to_map(map_height, map_width, resolution, origin, empty_map);
+    map_msg.data = empty_map;
     bounded_map_update_publisher->publish(
-        convertOccupancyGridToOccupancyGridUpdate(response->map));
-    bounded_map_publisher->publish(response->map);
+        convertOccupancyGridToOccupancyGridUpdate(map_msg));
+    bounded_map_publisher->publish(map_msg);
     RCLCPP_INFO(this->get_logger(), "published");
   } catch (const std::exception &e) {
     RCLCPP_ERROR(this->get_logger(), "Failed to call service: %s", e.what());
@@ -216,25 +224,30 @@ void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
                                     double resolution,
                                     const Eigen::Vector2f &origin,
                                     std::vector<int8_t> &data) {
-  Eigen::Vector2f center(data_->field_width / 2., data_->field_height / 2.);
-  center[0] = 0;
+  Eigen::Vector2f center(0.0, data_->field_height / 2.);
   int x_factor = 2;
   MPS new_mps(center, Eigen::Rotation2Df(0.), "map_boundary",
-              data_->field_width * x_factor, data_->field_height);
+              (data_->field_width * x_factor + 2 * border_thickness_),
+              (data_->field_height + 2 * border_thickness_));
+
   if (!data_->field_mirrored) {
     Eigen::Vector2f center2(data_->field_width / 2., data_->field_height / 2.);
     MPS new_mps2(center2, Eigen::Rotation2Df(0.), "map_boundary",
-                 data_->field_width, data_->field_height);
+                 (data_->field_width + 2 * border_thickness_),
+                 (data_->field_height + 2 * border_thickness_));
     new_mps2 = new_mps2.from_origin(origin);
-    add_mps_to_map(new_mps2, map_height, map_width, resolution, data);
+    add_mps_to_map(new_mps2, map_height, map_width, resolution, data,
+                   border_thickness_ * 100);
   }
 
   new_mps = new_mps.from_origin(origin);
-  add_mps_to_map(new_mps, map_height, map_width, resolution, data);
+  add_mps_to_map(new_mps, map_height, map_width, resolution, data,
+                 border_thickness_ * 100);
 }
 
 void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
-                               double resolution, std::vector<int8_t> &data) {
+                               double resolution, std::vector<int8_t> &data,
+                               int borderSize) {
   float cosAngle = std::cos(mps.angle);
   float sinAngle = std::sin(mps.angle);
 
@@ -243,9 +256,6 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
   int minY = std::max(0, mps.GetMin(resolution).y());
   int maxX = std::min(width - 1, mps.GetMax(resolution).x());
   int maxY = std::min(height - 1, mps.GetMax(resolution).y());
-
-  // Border size
-  int borderSize = 3;
 
   // Iterate over the pixels within the bounding box
   for (int py = minY; py <= maxY; ++py) {
@@ -258,10 +268,9 @@ void MpsMapGen::add_mps_to_map(MPS mps, int height, int width,
       // Calculate distances to each side of the rectangle
       float distX = std::abs(cx * cosAngle + cy * sinAngle);
       float distY = std::abs(-cx * sinAngle + cy * cosAngle);
-
       // Check if the pixel is on the border of the rectangle
-      if (std::abs(distX - mps.mps_width / resolution / 2) <= borderSize ||
-          std::abs(distY - mps.mps_length / resolution / 2) <= borderSize) {
+      if (std::abs(distX - mps.mps_width / resolution / 2) <= (borderSize) ||
+          std::abs(distY - mps.mps_length / resolution / 2) <= (borderSize)) {
         data[py * width + px] = 100; // Set pixel to some value for border
       }
     }

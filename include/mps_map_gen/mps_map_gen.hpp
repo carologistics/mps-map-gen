@@ -31,7 +31,7 @@ public:
 private:
   void update_map();
   void add_mps_to_map(MPS mps, int height, int width, double resolution,
-                      std::vector<int8_t> &data);
+                      std::vector<int8_t> &data, int thickness = 3);
   void map_receive(rclcpp::Client<nav_msgs::srv::GetMap>::SharedFuture future);
   bool set_mps(MPS mps);
   void update_callback();
@@ -58,6 +58,7 @@ private:
   std::string mps_names[14] = {"M-BS",  "M-SS",  "M-DS",  "M-CS1", "M-CS2",
                                "M-RS1", "M-RS2", "C-BS",  "C-SS",  "C-DS",
                                "C-CS1", "C-CS2", "C-RS1", "C-RS2"};
+  std::string namespace_;
   void publish_tf();
 
   // only here to prevent realocation
@@ -70,6 +71,7 @@ private:
   bool publish_wait_pos_ = true;
 
   double approach_dist_ = 0.3;
+  double border_thickness_ = 0.4;
 };
 
 } // namespace mps_map_gen
