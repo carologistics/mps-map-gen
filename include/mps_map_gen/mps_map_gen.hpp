@@ -71,7 +71,7 @@ private:
   bool publish_wait_pos_ = true;
 
   double approach_dist_ = 0.3;
-  double border_thickness_ = 0.4;
+  double border_thickness_ = 0.6;
 };
 
 } // namespace mps_map_gen

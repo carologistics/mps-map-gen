@@ -29,7 +29,7 @@ MpsMapGen::MpsMapGen() : Node("mps_map_gen") {
       "proto_path",
       ament_index_cpp::get_package_share_directory("rcll_protobuf_msgs") +
           "/rcll-protobuf-msgs/");
-  declare_parameter<double>("border_thickness", 0.4);
+  declare_parameter<double>("border_thickness", 0.6);
   namespace_ = this->get_parameter("namespace").as_string();
   approach_dist_ = get_parameter("approach_dist").as_double();
   data_ = std::make_shared<MpsMapGenData>();
@@ -224,11 +224,11 @@ void MpsMapGen::add_boundary_to_map(int map_height, int map_width,
                                     double resolution,
                                     const Eigen::Vector2f &origin,
                                     std::vector<int8_t> &data) {
-  Eigen::Vector2f center(0.0, data_->field_height / 2.);
+  Eigen::Vector2f center(0.0, (data_->field_height / 2.) + 0.125);
   int x_factor = 2;
   MPS new_mps(center, Eigen::Rotation2Df(0.), "map_boundary",
-              (data_->field_width * x_factor + 2 * border_thickness_),
-              (data_->field_height + 2 * border_thickness_));
+              (data_->field_width * x_factor + border_thickness_),
+              (data_->field_height + border_thickness_));
 
   if (!data_->field_mirrored) {
     Eigen::Vector2f center2(data_->field_width / 2., data_->field_height / 2.);
