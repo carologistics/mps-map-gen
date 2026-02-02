@@ -71,7 +71,7 @@ ament_target_dependencies(
 
 install(TARGETS mps_map_gen mps wait_pos refbox_connector DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 
 # Install include directory
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
